@@ -2,7 +2,7 @@ import cv2
 
 def main():
     cv2.namedWindow('Basic')
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture('http://10.42.0.211:4747/video')
 
     if cap.isOpened():
         ret, frame = cap.read()
@@ -15,7 +15,7 @@ def main():
         if cv2.waitKey(1) == 27:
             break
 
-    cv2.destroyAllWindows()    
+    cv2.destroyAllWindows()
     cap.release()
 
 if __name__ == "__main__":
