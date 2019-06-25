@@ -1,7 +1,7 @@
 from flask import Flask, request, Response
 import requests
 
-app = Flask(__name__)
+application = app = Flask(__name__)
 
 @app.route('/api', methods=['POST', 'GET'])
 def api():
