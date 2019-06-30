@@ -3,7 +3,7 @@ import requests
 
 application = app = Flask(__name__)
 
-@app.route('/api', methods=['POST', 'GET'])
+@app.route('/small', methods=['POST', 'GET'])
 def api():
     return 'hmmm'
 
