@@ -1,8 +1,10 @@
 from flask import Flask, request, Response
 from utils import clean
+from reddit import redditusermedia
 import os
 import requests
 import json
+
 
 application = app = Flask(__name__)
 
@@ -12,6 +14,9 @@ def api():
         js = request.get_json()
         if js['func'] == '/clam':
             mess = {'result':clean(log=True)}
+            return json.dumps(mess)
+        elif js['func'] == '/rumz':
+            mess = {'result':redditusermedia(js['param'])}
             return json.dumps(mess)
 
 if __name__ == '__main__':
