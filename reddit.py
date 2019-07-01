@@ -1,5 +1,6 @@
 import praw
 import os
+import requests
 from utils import zipit, clean, timeformat, utc
 
 def redditusermedia(user):
@@ -34,3 +35,7 @@ def redditusermedia(user):
     path = zipit(directory).split('/')[-1]
     mainbody = user + '\n\n' + 'ziploc\n' + bigbro + 'temp/' + path + '\n\n' + mainbody
     return mainbody
+
+
+if __name__ == '__main__':
+    print(redditusermedia('bbypocahontas'))
