@@ -7,8 +7,7 @@ import urllib
 def redditusermedia(user):
     address = os.environ['REDDITAPI']
     bigbro = os.environ['OWNNAME']
-
-#    address = 'https://api.pushshift.io/reddit/search'
+#    address = 'https://api.pushshift.io/reddit/search/'
 #    bigbro = ''
     user = user.split('/')[-1]
     r = requests.get(address+'submission/?'+'author='+ user +'&fields=url,title,created_utc&size=500')
