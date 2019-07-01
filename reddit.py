@@ -5,10 +5,10 @@ from utils import zipit, clean, timeformat, utc
 import urllib
 
 def redditusermedia(user):
-    address = os.environ['REDDITAPI']
-    bigbro = os.environ['OWNNAME']
-#    address = 'https://api.pushshift.io/reddit/search/'
-#    bigbro = ''
+#    address = os.environ['REDDITAPI']
+#    bigbro = os.environ['OWNNAME']
+    address = 'https://api.pushshift.io/reddit/search/'
+    bigbro = ''
     user = user.split('/')[-1]
     r = requests.get(address+'submission/?'+'author='+ user +'&fields=url,title,created_utc&size=500')
     js = r.json()['data']
@@ -29,10 +29,10 @@ def redditusermedia(user):
         try:
             if 'gfycat' in x:
                 name =  x.split('/')[-1] + '.mp4'
-                urllib.request.urlretrieve('http://zippy.gfycat.com/' + name, directory+'/'+dic[x]+'.mp4')
+                urllib.request.urlretrieve('http://zippy.gfycat.com/' + name, directory+'/'+dic[x].encode('ascii', 'ignore').decode('ascii')+'.mp4')
             else:
                 ext = x.split('.')[-1]
-                urllib.request.urlretrieve(x, directory +'/' + dic[x] + '.' + ext)
+                urllib.request.urlretrieve(x, directory +'/' + dic[x].encode('ascii', 'ignore').decode('ascii') + '.' + ext)
         except Exception as e:
             print(x)
             print(e)
