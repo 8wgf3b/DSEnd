@@ -60,7 +60,7 @@ def redditusermedia(user):
     while len(js) != 0:
         dummy.extend(js)
         bef = utc(js[-1]['created_utc'])
-        r = requests.get(address+'submission/?'+'author=bbypocahontas&fields=url,title,created_utc&size=500&before='+bef)
+        r = requests.get(address+'submission/?'+'author='+user+'&fields=url,title,created_utc&size=500&before='+bef)
         js = r.json()['data']
     dic = {x['url']:x['title'] for x in dummy}
     mainbody = ''
@@ -88,7 +88,6 @@ def redditusermedia(user):
 
 
 if __name__ == '__main__':
-    #print(redditusermedia('opiumzxq'))
     for item in argv[1:]:
         print(redditusermedia(item))
     print('\n\nThe zipped files are stored in temp folder')
