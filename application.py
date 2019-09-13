@@ -1,6 +1,6 @@
 from flask import Flask, request, Response
 from utils import clean
-from reddit import redditusermedia
+from reddit import reddit_user_media
 import os
 import requests
 import json
@@ -17,7 +17,7 @@ def api():
                 mess = {'result':clean(log=True)}
                 return json.dumps(mess)
             elif js['func'] == '/rumz':
-                mess = {'result':redditusermedia(js['param'])}
+                mess = {'result':reddit_user_media(js['param'])}
                 return json.dumps(mess)
     except Exception as e:
         print(e)

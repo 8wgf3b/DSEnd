@@ -1,93 +1,91 @@
-import os, shutil
+import json, os, re, shutil, sys
 import requests
-from utils import zipit, clean, timeformat, utc
-import urllib
-from sys import argv
-import calendar
-from datetime import datetime, date
+from tqdm import tqdm
 
-def timeformat(x=datetime.now(), typ='DATE'):
-    if type(x) != type(datetime.now()):
-        x = datetime(x)
-    if typ == 'DATE':
-        return x.strftime('%Y-%m-%d')
-    elif typ =='HOUR':
-        return x.strftime('%H:%M:%S')
-    elif typ=='BOTH':
-        return x.strftime('%Y-%m-%d')+'%20'+x.strftime('%H:%M:%S')
+def download_file(url: str, outputFile: str) -> None:
+    with requests.get(url, stream=True) as r:
+        with open(outputFile, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
 
-def utc(x, totimestamp=False):
-    if totimestamp == False:
-        return timeformat(datetime.utcfromtimestamp(x))
-    else:
-        d = datetime(*x)
-        epoch = datetime(1970,1,1)
-        return int((d - epoch).total_seconds())
-
-
-def zipit(path):
-    try:
-        shutil.make_archive(path, 'zip', path)
-        return path + '.zip'
-    except Exception as e:
-        print(e)
-
-def clean(path = 'temp/', log = False):
-    for file in os.listdir(path):
-        if file == '.gitkeep':
-            continue
-        file_path = os.path.join(path, file)
-#        print(file_path)
-        try:
-            if os.path.isfile(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
-        except Exception as e:
-            print(e)
-    if log == True:
-        return '\n'.join(os.listdir(path))
-
-def redditusermedia(user):
-    address = os.getenv('REDDITAPI', 'https://api.pushshift.io/reddit/search/')
+def reddit_user_media(user: str) -> None:
     bigbro = os.getenv('OWNNAME', '')
-#    address = 'https://api.pushshift.io/reddit/search/'
-#    bigbro = ''
-    user = user.split('/')[-1]
-    r = requests.get(address+'submission/?'+'author='+ user +'&fields=url,title,created_utc&size=500')
-    js = r.json()['data']
-    dummy = []
-    while len(js) != 0:
-        dummy.extend(js)
-        bef = utc(js[-1]['created_utc'])
-        r = requests.get(address+'submission/?'+'author='+user+'&fields=url,title,created_utc&size=500&before='+bef)
-        js = r.json()['data']
-    dic = {x['url']:x['title'] for x in dummy}
-    mainbody = ''
-    for x in dic:
-        mainbody += dic[x] + '\n' + x+ '\n\n'
+    iteration = 1
+    posts = dict()
+    while True:
+        params = {
+            'author': user,
+            'fields': ('url', 'title', 'created_utc'),
+            'size': 500,
+        }
+        if iteration > 1:
+            params.update({'before': r[-1]['created_utc']})
+        r = requests.get('https://api.pushshift.io/reddit/submission/search', params=params).json()['data']
+        if len(r) == 0:
+            break
+        for post in r:
+          posts[post['title']] = post['url']
+        iteration = iteration + 1
+
     directory = 'temp/' + user
     if not os.path.exists(directory):
         os.makedirs(directory)
-    for x in dic:
+
+    for (rawTitle, rawUrl) in tqdm(posts.items()):
+        urls = dict()
         try:
-            if 'gfycat' in x:
-                name =  x.split('/')[-1] + '.mp4'
-                urllib.request.urlretrieve('http://zippy.gfycat.com/' + name, directory+'/'+dic[x].encode('ascii', 'ignore').decode('ascii')+'.mp4')
+            title = rawTitle.encode('ascii', 'ignore').decode('ascii').rstrip('.')
+            rawExt = rawUrl.split('.')[-1]
+            if 'reddit.com' in rawUrl and '/comments/' in rawUrl:
+                pass
+            elif 'youtube.com' in rawUrl:
+                pass
+            elif 'gfycat' in rawUrl:
+                name =  rawUrl.split('/')[-1]
+                g = requests.get('https://api.gfycat.com/v1/gfycats/' + name)
+                urls[g.json()['gfyItem']['mp4Url']] = 'mp4'
+            elif 'imgur.com/a/' in rawUrl:
+                g = requests.get(rawUrl)
+                # Imgur API requires auth, however albums embed json in the html
+                # to avoid auth restriction.
+                j = json.loads(re.findall('(?<=image               : ).*', g.text)[0].rstrip(','))
+                c = 1
+                for i in j['album_images']['images']:
+                    urls['https://i.imgur.com/' + i['hash'] + i['ext']] =  str(c) + i['ext']
+                    c = c + 1
+            elif 'imgur.com' in rawUrl and 'gifv' in rawUrl:
+                # Prevent trying downloading invalid formats, could also download gif
+                urls[rawUrl.replace('gifv', 'mp4')] = 'mp4'
+            elif rawUrl[-1] == '/':
+                continue
             else:
-                ext = x.split('.')[-1]
-                urllib.request.urlretrieve(x, directory +'/' + dic[x].encode('ascii', 'ignore').decode('ascii') + '.' + ext)
+                urls[rawUrl] = rawExt
+            for (url, ext) in urls.items():
+                if ext.lower() not in ['mp4', 'webm', 'jpg', 'jpeg', 'png', 'gif']:
+                    xl = rawUrl.lower()
+                    if ext[0].isdigit():
+                        ext = ext
+                    elif 'mp4' in xl:
+                        ext = 'mp4'
+                    elif 'webm' in xl:
+                        ext = 'webm'
+                    elif 'jpg' in xl or 'jpeg' in xl:
+                        ext = 'jpg'
+                    elif 'png' in xl:
+                        ext = 'png'
+                    elif 'gif' in xl:
+                        ext = 'gif'
+                    else:
+                        print('FIXME: {}'.format(rawUrl))
+                        pass
+                download_file(url, directory + '/' + title + '.' + ext)
         except Exception as e:
-            print(x)
             print(e)
             continue
-    path = zipit(directory).split('/')[-1]
+    shutil.make_archive(directory, 'zip', directory)
     shutil.rmtree(directory)
-    mainbody = user + '\n\n' + 'ziploc\n' + bigbro + 'temp/' + path + '\n\n'
-    return mainbody
-
+    path = directory + '.zip'
+    return bigbro + 'temp/' + path
 
 if __name__ == '__main__':
-    for item in argv[1:]:
-        print(redditusermedia(item))
-    print('\n\nThe zipped files are stored in temp folder')
+    for arg in sys.argv[1:]:
+        reddit_user_media(arg)
