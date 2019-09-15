@@ -1,6 +1,16 @@
 import os, shutil
 import calendar
+import time
 from datetime import datetime, date
+import pyimgur
+
+def utc(x = time.time(), totimestamp=False, format = 'BOTH'):
+    if totimestamp == False:
+        return timeformat(datetime.utcfromtimestamp(x), format)
+    else:
+        d = datetime(*x)
+        epoch = datetime(1970,1,1)
+        return int((d - epoch).total_seconds())
 
 def timeformat(x=datetime.now(), typ='DATE'):
     if type(x) != type(datetime.now()):
@@ -11,15 +21,21 @@ def timeformat(x=datetime.now(), typ='DATE'):
         return x.strftime('%H:%M:%S')
     elif typ=='BOTH':
         return x.strftime('%Y-%m-%d')+'%20'+x.strftime('%H:%M:%S')
-
-def utc(x, totimestamp=False):
-    if totimestamp == False:
-        return timeformat(datetime.utcfromtimestamp(x))
     else:
-        d = datetime(*x)
-        epoch = datetime(1970,1,1)
-        return int((d - epoch).total_seconds())
+        return x.strftime(typ)
 
+def echoimage(URL, file=False):
+    im = pyimgur.Imgur(os.environ['IMGUR_CID'])
+    #url can be sent directly but i wanted to test the temp directory's usage
+    if file == False:
+        response = requests.get(URL)
+        if response.status_code == 200:
+            with open("temp/echoim.jpg", 'wb') as f:
+                f.write(response.content)
+        uploaded_image = im.upload_image("temp/echoim.jpg", title="twilwhatbot")
+    else:
+        uploaded_image = im.upload_image(URL, title="twilwhatbot")
+    return uploaded_image.link
 
 def zipit(path):
     try:
