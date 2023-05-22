@@ -3,7 +3,7 @@ tqdm==4.35.0
 #psycopg2==2.7.1
 Flask==1.0.3
 urllib3>=1.24.1
-requests==2.21.0
+requests==2.31.0
 gunicorn==19.9.0
 praw==6.2.0
 numpy==1.16.2
